@@ -1,0 +1,13 @@
+
+
+POST http://localhost:5050/zuowei/remove HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+id=181
+
+###
+
+POST http://localhost:5050/api/login HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+username=1204&password=123456
