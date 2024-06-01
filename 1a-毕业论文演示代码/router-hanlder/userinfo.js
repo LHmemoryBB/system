@@ -1,4 +1,5 @@
 const db = require('../db/index');
+const bcrypt = require("bcryptjs");
 
 //获取用户id
 //更新个人用户
@@ -33,13 +34,15 @@ exports.getUserInfoAdmin = (req, res) => {
 // 更新用户信息
 exports.updateUserInfo = (req, res) => {
     console.log(req.body);
-    const sql = 'update ev_users set ? where id=?';
-    db.query(sql, [req.body, req.auth.id], (err, results) => {
+    const sql = 'UPDATE ev_users SET ? WHERE id = ?';
+    db.query(sql, [req.body, req.body.id], (err, results) => {
         if (err) return res.send({ status: 1, message: err.message })
         if (results.affectedRows !== 1) return res.send({ status: 1, message: '更新用户信息失败！' })
         res.send({ status: 0, message: '更新用户信息成功！' })
     });
 }
+
+
 
 //管理员更新用户信息
 exports.adminUpdateUserInfo = (req, res) => {
@@ -57,6 +60,17 @@ exports.admindeleteuser = (req, res) => {
         if (err)
             return res.send({ status: 1, message: err.message })
         res.send({ status: 0, message: '删除用户成功' })
+    })
+}
+
+//重置密码
+exports.resetPassword = (req, res) => {
+    console.log(req.query);
+    const newPassword = bcrypt.hashSync('123456', 10);
+    let sql = "UPDATE ev_users SET password = ? WHERE id = ?";
+    db.query(sql, [newPassword, req.query.id], (err, results) => {
+        if (err) return res.send({ status: 1, message: err.message })
+        res.send({ status: 0, message: '重置密码成功' })
     })
 }
 
@@ -95,12 +109,8 @@ exports.myReservation = (req, res) => {
 }
 //取消预约
 exports.cancelReservation = (req, res) => {
-    const sql = 'delete from reservations where seat_id=?';
-    db.query(sql, req.body.id, (err, results) => {
-        if (err) return res.cc(err);
-        if (results.affectedRows !== 1) return res.cc('取消预约失败！')
         //更新座位信息
-        const sql = 'update seats set status=0 where id=?';
+        const sql = 'update reservations set status=2 where id=?';
         db.query(sql, req.body.id, (err, results) => {
             if (err) return res.cc(err);
             if (results.affectedRows !== 1) return res.cc('更新座位信息失败！')
@@ -109,6 +119,5 @@ exports.cancelReservation = (req, res) => {
                 message: '取消预约成功！',
             })
         })
-    })
 }
 

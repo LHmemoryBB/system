@@ -6,7 +6,7 @@ const zuoweiHandler = require('../router-hanlder/zuowei')
 
 
 // 添加
-router.post('/add', zuoweiHandler.add);
+router.get('/add', zuoweiHandler.add);
 // 删除
 // zuoweiHandler.del
 router.post('/remove', zuoweiHandler.del);

@@ -1,134 +1,146 @@
 <template>
   <div class="app-container">
-    <el-table
-      border
-      :data="list"
-      style="width: 100%"
-    >
-      <el-table-column
-        prop="nickname"
-        label="昵称"
-        width="180"
-      >
+    <div>
+      <el-form :inline="true" label-width="100px">
+        <el-form-item label="学生学号">
+          <el-input v-model="form.studentid"></el-input>
+        </el-form-item>
+        <el-form-item label="预约状态">
+          <el-select
+            v-model="form.reservation_status"
+            placeholder="请选择预约状态"
+          >
+            <el-option label="已过期" :value="1"></el-option>
+            <el-option label="已取消" :value="2"></el-option>
+            <el-option label="已预约" :value="3"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="queryList">查询</el-button>
+          <el-button type="success" @click="reset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+    <el-table border :data="list" style="width: 100%">
+      <el-table-column type="index" width="50"> </el-table-column>
+      <el-table-column prop="nickname" label="昵称" width="180">
       </el-table-column>
-      <el-table-column
-        prop="studentId"
-        label="学号"
-        width="180"
-      >
+      <el-table-column prop="studentid" label="学号" width="180">
       </el-table-column>
-      <el-table-column
-        prop="seat_id"
-        label="座号号"
-        width="180"
-      >
+      <el-table-column prop="seat_id" label="座位号" width="180">
       </el-table-column>
-      <el-table-column
-        prop="reservation_date"
-        label="预约日期"
-      >
+      <el-table-column prop="start_time" label="预约开始时间">
+      </el-table-column>
+      <el-table-column prop="end_time" label="预约结束时间"> </el-table-column>
+      <el-table-column prop="reservation_status" label="预约状态">
         <template slot-scope="scope">
-          {{filterTime2(scope.row)}}
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="reservation_time"
-        label="预约时长"
-      >
-      </el-table-column>
-      <el-table-column
-        prop="reservation_time"
-        label="预约结束时间"
-      >
-        <template slot-scope="scope">
-          {{filterTime(scope.row)}}
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="email"
-        label="邮箱"
-      >
-      </el-table-column>
-      <el-table-column
-        <el-table-column
-        prop="reservation_time"
-        label="操作"
-      >
-        <template slot-scope="scope">
-          <el-button
-            @click="handleBox1(scope.row)"
-            type="text"
-            size="mini"
-          >通过</el-button>
-          <el-button
-            @click="handleBox2(scope.row)"
-            type="text"
-            size="mini"
-          >拒绝</el-button>
+          <span v-if="scope.row.reservation_status == 3">
+            <span><el-tag type="success">已预约</el-tag></span>
+            <span
+              ><el-button
+                type="danger"
+                size="mini"
+                style="margin-left: 30px"
+                @click="cancelReserve(scope.row)"
+                >取消预约</el-button
+              ></span
+            >
+          </span>
+          <span v-else-if="scope.row.reservation_status == 2"
+            ><el-tag type="warning">已取消</el-tag></span
+          >
+          <span v-else-if="scope.row.reservation_status == 1"
+            ><el-tag type="info">已过期</el-tag></span
+          >
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      background
+      layout="prev, pager, next"
+      :total="dataTotal"
+      :page-size="30"
+      @current-change="handleCurrentChange"
+      :current-page.sync="currentPage"
+    >
+    </el-pagination>
   </div>
 </template>
 
 <script>
-import { getBox,refuse, accept } from '@/api/user'
+import { getBox, cancelAppointment, accept } from "@/api/user";
+import { resetRouter } from "@/router";
 
 export default {
-  data () {
+  data() {
     return {
-      list: []
-    }
+      list: [],
+      form: {
+        studentid: "",
+        reservation_status: null,
+      },
+      currentPage: 1,
+      dataTotal: null,
+    };
   },
-  created () {
-    this.getList()
+  created() {
+    this.getList();
   },
   methods: {
-    filterTime2 (row) {
-      const now = new Date(row.reservation_date)
-      return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}T ${now.getHours()}:${now.getMinutes()}`
-    },
-    filterTime (row) {
-      const time = new Date(row.reservation_date).getTime();
-      const time2 = Number(row.reservation_time) * 60 * 1000;
-      const newTime = time + time2;
-      const now = new Date(newTime)
-      return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}T ${now.getHours()}:${now.getMinutes()}`
-    },
-    async handleBox1 (row) {
-      try {
-        const { message } = await accept({
-        reservation_time: row.reservation_time,
-        seat_id: row.seat_id,
-        user_id: row.user_id
-      })
-      this.$message.success('接受成功')
-      } catch (error) {
-        this.$message.success('接受成功')
-      }
-      this.getList()
-    },
-    async handleBox2 (row) {
-      try {
-        const { message } = await refuse({
-        user_id: row.user_id
-      })
-      this.$message.success('拒绝成功')
-      } catch (error) {
-        this.$message.success('拒绝成功')
-      }
-      this.getList()
-     },
-    handleBox3 (row) { },
-    async getList () {
-      const { data } = await getBox()
-      this.list = data
+    async getList() {
+      const params = {
+        page: this.currentPage,
+        size: 30,
+        ...this.form,
+      };
+      const { total, data } = await getBox(params);
+      this.list = data;
+      this.dataTotal = total;
       console.log(this.list);
-    }
-  }
-}
+    },
+    handleCurrentChange(val) {
+      this.currentPage = val;
+      this.getList();
+    },
+    cancelReserve(row) {
+      this.$confirm("此操作将强制取消该学生的预约, 是否继续?", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }).then(() => {
+        cancelAppointment({ id: row.id }).then((res) => {
+          if (res.status == 0) {
+            this.$message.success("修改预约状态成功");
+            this.getList();
+          }
+        });
+      });
+    },
+    queryList() {
+      this.currentPage = 1;
+      this.getList();
+    },
+    reset() {
+      this.currentPage = 1;
+      this.form = {};
+      this.getList();
+    },
+  },
+};
 </script>
 
 <style scoped>
+.app-container {
+  height: calc(100vh - 50px);
+}
+.app-container /deep/ .el-pagination {
+  text-align: center;
+}
+.app-container /deep/ .el-table--border {
+  width: 100%;
+  height: calc(100% - 120px);
+  overflow: auto;
+  margin-bottom: 20px;
+}
 </style>
 

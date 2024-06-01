@@ -9,17 +9,24 @@
       <el-table-column prop="end_time" label="预约结束时间"> </el-table-column>
       <el-table-column prop="reservation_status" label="预约状态">
         <template slot-scope="scope">
-          <span v-if="scope.row.reservation_status == 1"> 预约已过期</span>
-          <span v-else-if="scope.row.reservation_status == 2"> 预约已取消</span>
-          <div v-else-if="scope.row.reservation_status == 3">
-            <span style="color: rgb(31, 187, 31)"> 预约成功 </span>
-            <el-button
-              size="mini"
-              style="margin-left: 20px"
-              @click="cancelAppoinment(scope.row)"
-              >取消预约</el-button
+          <span v-if="scope.row.reservation_status == 3">
+            <span><el-tag type="success">已预约</el-tag></span>
+            <span
+              ><el-button
+                type="danger"
+                size="mini"
+                style="margin-left: 30px"
+                @click="cancelAppoinment(scope.row)"
+                >取消预约</el-button
+              ></span
             >
-          </div>
+          </span>
+          <span v-else-if="scope.row.reservation_status == 2"
+            ><el-tag type="warning">已取消</el-tag></span
+          >
+          <span v-else-if="scope.row.reservation_status == 1"
+            ><el-tag type="info">已过期</el-tag></span
+          >
         </template>
       </el-table-column>
     </el-table>

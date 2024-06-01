@@ -8,6 +8,13 @@ export function login(data) {
   })
 }
 
+export function delUser(data) {
+  return request({
+    url: '/api/delUser?id='+ data.id,
+    method: 'get',
+  })
+}
+
 // /seat/refuse
 export function refuse(data) {
   return request({
@@ -27,10 +34,12 @@ export function accept(data) {
 }
 
 // /seat/applicantinfo
-export function getBox() {
+export function getBox(data) {
+  console.log(data);
   return request({
     url: '/seat/applicantinfo',
-    method: 'get'
+    method: 'post',
+    data
   })
 }
 
@@ -57,11 +66,18 @@ export function getSeat(param) {
     method: 'get'
   })
 }
+// 获取座位号
+export function cancelAppointment(param) {
+  return request({
+    url: '/seat/cancelAppointment?id='+ param.id,
+    method: 'get'
+  })
+}
 
 // 修改用户信息
 export function setUser(data) {
   return request({
-    url: '/my/userinfo',
+    url: '/my/updateUserInfo',
     method: 'post',
     data
   })
@@ -80,6 +96,24 @@ export function setSeat(data) {
 export function setPassword(data) {
   return request({
     url: '/my/updatePwd',
+    method: 'post',
+    data
+  })
+}
+
+
+// 添加座位
+export function addzuowei(data) {
+  return request({
+    url: '/zuowei/add?floor='+ data.floor,
+    method: 'get'
+  })
+}
+
+// 添加座位
+export function delzuowei(data) {
+  return request({
+    url: '/zuowei/remove',
     method: 'post',
     data
   })

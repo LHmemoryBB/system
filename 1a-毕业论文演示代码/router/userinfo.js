@@ -8,7 +8,7 @@ router.get('/userinfo', userinfo_handler.getUserInfo)
 router.get('/userinfoadmin', userinfo_handler.getUserInfoAdmin)
 
 // 更新用户信息
-router.post('/userinfo', userinfo_handler.updateUserInfo)
+router.post('/updateUserInfo', userinfo_handler.updateUserInfo)
 
 // 更新密码
 router.post('/updatepwd', userinfo_handler.updatePassword)
@@ -21,4 +21,6 @@ router.post('/adminupdateuserinfo', userinfo_handler.adminUpdateUserInfo)
 //管理员删除用户信息
 router.post('/admindeleteuser', userinfo_handler.admindeleteuser)
 
+//重置密码
+router.get('/reset-password', userinfo_handler.resetPassword)
 module.exports = router;

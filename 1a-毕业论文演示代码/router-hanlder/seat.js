@@ -9,13 +9,14 @@ exports.getSeatYuYueJILU = function (req, res) {
   if (userid) {
     sql = "SELECT * FROM reservations WHERE user_id = " + userid;
   } else if (seatid) {
-    sql = "SELECT * FROM reservations WHERE seat_id = " + seatid  + ' ORDER BY start_time';
+    sql =
+      "SELECT * FROM reservations WHERE seat_id = " +
+      seatid +
+      "  AND reservation_status IN (3, 4) ORDER BY start_time;";
   } else {
     res.cc({ status: 0, message: "缺少查询条件" });
   }
-  console.log(sql);
   db.query(sql, (err, results) => {
-    console.log(results, "查询数据");
     if (err) {
       return res.cc(err);
     }
@@ -25,7 +26,6 @@ exports.getSeatYuYueJILU = function (req, res) {
 
 //获取座位信息
 exports.getSeatInfo = function (req, res) {
-  console.log(req.query);
   let floor = req.query.floor;
   const sql = "SELECT * FROM seats WHERE floor = " + floor;
   db.query(sql, (err, results) => {
@@ -49,32 +49,6 @@ exports.updateSeatInfo = function (req, res) {
     res.send({ status: 0, message: "更新座位信息成功！" });
   });
 };
-//定时更新(座位状态)
-exports.checkReservationsInterval = setInterval(() => {
-  const sql =
-    "SELECT * FROM reservations WHERE reservation_status = 3 AND reservation_date <= NOW()";
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error("定时任务查询失败:", err);
-      return;
-    }
-    results.forEach((reservation) => {
-      // 更新座位状态
-      const seatUpdateSql = "UPDATE seats SET status=2 WHERE id=?";
-      db.query(seatUpdateSql, [reservation.seat_id], (err, seatResults) => {
-        if (err) {
-          console.error("更新座位状态失败:", err);
-          return;
-        }
-        if (seatResults.affectedRows !== 1) {
-          console.error("更新座位状态失败，受影响行数不正确");
-          return;
-        }
-        //console.log('座位状态更新成功');
-      });
-    });
-  });
-}, 1000); // 每隔60000毫秒（即1分钟）执行一次；1000就是1秒
 
 //获取预约信息
 exports.getreservation = function (req, res) {
@@ -106,12 +80,18 @@ exports.getreservationbyid = function (req, res) {
 
 //插入预约信息
 exports.insertreservation = function (req, res) {
-  console.log(req.body);
   const sql =
-    "INSERT INTO reservations SET seat_id=?,start_time=?,end_time=?,user_id=?,reservation_status=3 ";
+    "INSERT INTO reservations SET seat_id=?,start_time=?,end_time=?,user_id=?,studentid=?,nickname=?,reservation_status=3 ";
   db.query(
     sql,
-    [req.body.seat_id, req.body.startTime, req.body.endTime, req.auth.id],
+    [
+      req.body.seat_id,
+      req.body.startTime,
+      req.body.endTime,
+      req.auth.id,
+      req.auth.studentid,
+      req.auth.nickname,
+    ],
     (err, results) => {
       if (err) {
         return res.cc(err);
@@ -129,25 +109,65 @@ exports.insertreservation = function (req, res) {
         }
         res.send({ status: 0, message: "预约成功！", data: results });
       });
-      
     }
   );
 };
 
-//获取申请人信息
+//获取预约记录列表
 exports.getapplicantinfo = function (req, res) {
-  //在reservation表里面根据user_id获取申请人信息，还有座位信息
-  const sql =
-    "SELECT reservations.*,ev_users.nickname,ev_users.email,ev_users.studentId FROM reservations JOIN ev_users ON reservations.user_id=ev_users.id JOIN seats ON reservations.seat_id=seats.id WHERE reservations.reservation_status=1";
-  db.query(sql, (err, results) => {
-    if (err) {
-      return res.cc(err);
+  const { page = 1, size = 10, reservation_status, studentid } = req.body;
+  const offset = (page - 1) * size;
+
+  let query = "SELECT * FROM reservations WHERE 1=1";
+  let countQuery = "SELECT COUNT(*) as total FROM reservations WHERE 1=1";
+  let queryParams = [];
+
+  // 可选搜索条件
+  if (reservation_status) {
+    query += " AND reservation_status = ?";
+    countQuery += " AND reservation_status = ?";
+    queryParams.push(reservation_status);
+  }
+
+  if (studentid) {
+    query += " AND studentid = ?";
+    countQuery += " AND studentid = ?";
+    queryParams.push(studentid);
+  }
+
+  query += " ORDER BY start_time LIMIT ? OFFSET ?";
+  queryParams.push(parseInt(size), parseInt(offset));
+
+  // 查询总数
+  db.query(
+    countQuery,
+    queryParams.slice(0, queryParams.length - 2),
+    (countError, countResults) => {
+      if (countError) {
+        console.error("Error executing count query:", countError);
+        res.status(500).json({ error: "Internal Server Error" });
+        return;
+      }
+
+      const total = countResults[0].total;
+
+      // 查询分页数据
+      db.query(query, queryParams, (error, results) => {
+        if (error) {
+          console.error("Error executing query:", error);
+          res.status(500).json({ error: "Internal Server Error" });
+          return;
+        }
+
+        res.json({
+          page: parseInt(page),
+          size: parseInt(size),
+          total: total,
+          data: results,
+        });
+      });
     }
-    if (results.length === 0) {
-      return res.send({ status: 0, message: "获取申请人信息成功", data: null });
-    }
-    res.send({ status: 0, message: "获取申请人信息成功！", data: results });
-  });
+  );
 };
 
 //拒绝申请
@@ -170,12 +190,50 @@ exports.cancelAppointment = function (req, res) {
     if (err) {
       return res.cc(err);
     }
+    console.log(results, "12312312312312");
     if (results.affectedRows !== 1) {
       return res.cc("取消失败！");
     }
-    res.send({ status: 0, message: "取消成功" });
+    // const sql = 'select * from reservations where'
+    getReservationsById(req.query.id, (error, reservations) => {
+      if (error) {
+        console.error("Error fetching reservations:", error);
+      } else {
+        res.send({ status: 0, message: "取消成功" });
+      }
+    });
   });
 };
+function getReservationsById(id, callback) {
+  // 先查找指定 id 的 seat_id
+  db.query('SELECT seat_id FROM reservations WHERE id = ?', [id], (error, results) => {
+    if (error) return callback(error);
+
+    if (results.length === 0) {
+      return callback(new Error('No reservations found with the provided id.'));
+    }
+
+    const seatId = results[0].seat_id;
+
+    // 使用获取到的 seat_id 查找所有相关的 reservations
+    db.query('SELECT * FROM reservations WHERE seat_id = ?', [seatId], (error, reservations) => {
+      if (error) return callback(error);
+
+      // 判断 reservations 数组中所有的 reservation_status 是否都不等于 3 并且不等于 4
+      const allStatusesValid = reservations.every(res => res.reservation_status !== 3 && res.reservation_status !== 4);
+
+      if (allStatusesValid) {
+        // 更新 seats 表中对应的 status 为 0
+        db.query('UPDATE seats SET status = 0 WHERE id = ?', [seatId], (error) => {
+          if (error) return callback(error);
+          callback(null, { message: 'Seat status updated to 0' });
+        });
+      } else {
+        callback(null, { message: 'No update needed' });
+      }
+    });
+  });
+}
 
 //接受申请
 exports.accept = function (req, res) {
@@ -210,5 +268,103 @@ exports.accept = function (req, res) {
       });
     }
     res.send({ status: 0, message: "接受成功！" });
+  });
+};
+
+//接受申请
+exports.seatStatistic = function (req, res) {
+  const query = `
+  SELECT 
+      (SELECT COUNT(*) 
+       FROM seats s
+       LEFT JOIN (
+           SELECT seat_id, MAX(reservation_status) AS latest_status
+           FROM reservations
+           GROUP BY seat_id
+       ) r ON s.id = r.seat_id
+       WHERE r.latest_status IS NULL OR r.latest_status NOT IN (3, 4)
+      ) AS free_seats,
+      
+      (SELECT COUNT(*) 
+       FROM seats s
+       LEFT JOIN (
+           SELECT seat_id, MAX(reservation_status) AS latest_status
+           FROM reservations
+           GROUP BY seat_id
+       ) r ON s.id = r.seat_id
+       WHERE r.latest_status = 3
+      ) AS reserved_seats,
+      
+      (SELECT COUNT(*) 
+       FROM seats s
+       LEFT JOIN (
+           SELECT seat_id, MAX(reservation_status) AS latest_status
+           FROM reservations
+           GROUP BY seat_id
+       ) r ON s.id = r.seat_id
+       WHERE r.latest_status = 4
+      ) AS occupied_seats;
+`;
+  db.query(query, (error, results) => {
+    if (error) {
+      console.error("Query error: " + error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    res.send({
+      status: 0,
+      data: [
+        results[0].free_seats,
+        results[0].reserved_seats,
+        results[0].occupied_seats,
+      ], // 空闲，已预约，占用
+    });
+  });
+};
+
+//查询7天的预约数
+exports.reserveDays = function (req, res) {
+  const query = `
+  SELECT 
+  s.floor, 
+  DATE(r.start_time) AS date, 
+  COUNT(r.id) AS reservation_count
+FROM 
+  reservations r
+JOIN 
+  seats s ON r.seat_id = s.id
+WHERE 
+  r.start_time >= CURDATE() - INTERVAL 3 DAY
+  AND r.start_time < CURDATE() + INTERVAL 4 DAY
+GROUP BY 
+  s.floor, DATE(r.start_time)
+ORDER BY 
+  s.floor, DATE(r.start_time);
+  `;
+
+  db.query(query, (error, results) => {
+    if (error) {
+      console.error("Query error: " + error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    const floors = [...new Set(results.map((row) => row.floor))];
+
+    const data = floors.map((floor) => {
+      const arr = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - 2 + i);
+        const dateString = date.toISOString().split("T")[0];
+        const reservation = results.find(
+          (row) => row.floor === floor && row.date === dateString
+        );
+        return reservation ? reservation.reservation_count : 0;
+      });
+      return arr;
+    });
+
+    res.send({ status: 0, data: data });
   });
 };

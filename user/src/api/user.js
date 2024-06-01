@@ -43,7 +43,23 @@ export function getSeatInfo(param) {
 // 修改用户信息
 export function setUser(data) {
   return request({
-    url: '/my/userinfo',
+    url: '/my/updateUserInfo',
+    method: 'post',
+    data
+  })
+}
+// 更改密码第一步
+export function forgetPassword(data) {
+  return request({
+    url: '/api/forgot-password',
+    method: 'post',
+    data
+  })
+}
+// 更改密码第二步
+export function changePassword(data) {
+  return request({
+    url: '/api/change-password',
     method: 'post',
     data
   })
@@ -68,6 +84,13 @@ export function setPassword(data) {
 }
 
 
+// 重置密码
+export function resetPassword(param) {
+  return request({
+    url: '/my/reset-password?id=' + param.userid,
+    method: 'get'
+  })
+}
 // 所有预约记录
 export function getSeatReserveList(param) {
   return request({
@@ -79,6 +102,19 @@ export function getSeatReserveList(param) {
 export function cancelAppointment(param) {
   return request({
     url: '/seat/cancelAppointment?id=' + param.id,
+    method: 'get'
+  })
+}
+// 取消预约
+export function seatStatistic(param) {
+  return request({
+    url: '/seat/seatStatistic',
+    method: 'get'
+  })
+}
+export function reserveDays(param) {
+  return request({
+    url: '/seat/reserveDays',
     method: 'get'
   })
 }

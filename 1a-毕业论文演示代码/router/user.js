@@ -15,4 +15,13 @@ router.post('/login', userHandler.login);
 // 获取全部用户信息
 router.get('/getuserall', userHandler.getUserAll)
 
+
+// 删除用户
+router.get('/delUser', userHandler.delUser)
+
+// 忘记密码
+router.post('/forgot-password', userHandler.forgotPassword)
+// 忘记密码
+router.post('/change-password', userHandler.changePassword)
 module.exports = router;
+

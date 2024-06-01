@@ -6,18 +6,18 @@ const config = require('../config');
 //登录系统
 exports.login = function (req, res) {
   const userInfo = req.body;
-  console.log('发送的数据:', { username: userInfo.username, password: userInfo.password });
-  const sql = 'SELECT username,password FROM admin WHERE username=?';
-  if (!userInfo.username || !userInfo.password) {
+  console.log('发送的数据:', { studentid: userInfo.studentid, password: userInfo.password });
+  const sql = 'SELECT studentid,password FROM admin WHERE studentid=?';
+  if (!userInfo.studentid || !userInfo.password) {
     return res.send({ status: 1, message: "用户名或者密码不能为空！" });
 
   }
-  db.query(sql, userInfo.username, (err, results) => {
+  db.query(sql, userInfo.studentid, (err, results) => {
     if (err) {
       return res.send({ status: 1, message: err.message });
 
     }
-    console.log(userInfo.username)
+    console.log(userInfo.studentid)
     if (results.length !== 1) {
       return res.send({ status: 1, message: "用户名不存在！" });
     }

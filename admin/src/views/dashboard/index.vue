@@ -1,6 +1,8 @@
 <template>
   <div class="dashboard">
-    <div style="display: flex;justify-content: space-between;margin-bottom: 20px;">
+    <div
+      style="display: flex; justify-content: space-between; margin-bottom: 20px"
+    >
       <el-radio-group v-model="radio1" @change="getSeat">
         <el-radio-button :label="1">一楼</el-radio-button>
         <el-radio-button :label="2">二楼</el-radio-button>
@@ -23,7 +25,7 @@
 </template>
 
 <script>
-import { getSeat, setSeat } from "@/api/user";
+import { getSeat, addzuowei, delzuowei } from "@/api/user";
 
 export default {
   name: "Dashboard",
@@ -44,14 +46,16 @@ export default {
         type: "warning",
       })
         .then(() => {
-          const id = this.list[this.list.length - 1].id;
-          console.log("id", id);
-          this.list.push({
-            id: id + 1,
-          });
-          this.$message({
-            type: "success",
-            message: "添加成功!",
+          addzuowei({ floor: this.radio1 }).then((res) => {
+            if (res.status == 0) {
+              this.$message({
+                type: "success",
+                message: "添加成功!",
+              });
+              this.getSeat();
+            } else {
+              this.$message.error(res.message);
+            }
           });
         })
         .catch(() => {
@@ -68,11 +72,20 @@ export default {
         type: "warning",
       })
         .then(() => {
-          const index = this.list.findIndex((item) => item.id == row.id);
-          this.$delete(this.list, index);
-          this.$message({
-            type: "success",
-            message: "删除成功!",
+          const data = {
+            id: row.id,
+          };
+          delzuowei(data).then((res) => {
+            console.log(res);
+            if (res.status == 0) {
+              this.$message({
+                type: "success",
+                message: "删除成功!",
+              });
+              this.getSeat();
+            }else{
+              this.$message.error(res.message)
+            }
           });
         })
         .catch(() => {

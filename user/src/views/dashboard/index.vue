@@ -136,10 +136,10 @@
 
 <script>
 import { getSeat, setSeat, getSeatReserveList } from "@/api/user";
-import dayjs from 'dayjs';
+import dayjs from "dayjs";
 
 import { dateIsToday } from "@/utils/dateUtil.js";
-import isBetween from 'dayjs/plugin/isBetween.js';
+import isBetween from "dayjs/plugin/isBetween.js";
 dayjs.extend(isBetween);
 export default {
   name: "Dashboard",
@@ -173,17 +173,13 @@ export default {
       time2: "",
       pickerOptions: {
         disabledDate: (time) => {
-          if (dateIsToday(time)) {
-            return false;
-          } else {
-            return time.getTime() < new Date().getTime();
-          }
+          return time.getTime() <= new Date().getTime();
         },
       },
-      pickerTime1:{
+      pickerTime1: {
         selectableRange: ["10:00:00 - 20:00:00"],
       },
-      pickerTime2:{
+      pickerTime2: {
         selectableRange: ["10:00:00 - 20:00:00"],
       },
       resDate: {},
@@ -193,23 +189,34 @@ export default {
   created() {
     this.getSeat();
   },
-  mounted(){
-    console.log(dayjs('2024-05-20 18:11:00').isBetween('2024-05-20 17:00:00', '2024-05-20 21:00:00', null , '()'));
+  mounted() {
+    console.log(
+      dayjs("2024-05-20 18:11:00").isBetween(
+        "2024-05-20 17:00:00",
+        "2024-05-20 21:00:00",
+        null,
+        "()"
+      )
+    );
   },
   methods: {
     handleEnter() {
       const info = {
         seat_id: this.id + "",
-        startTime: `${dayjs(this.date1).format("YYYY-MM-DD")} ${dayjs(this.time1).format("HH:mm:ss")}`,
-        endTime: `${dayjs(this.date2).format("YYYY-MM-DD")} ${dayjs(this.time2).format("HH:mm:ss")}`,
+        startTime: `${dayjs(this.date1).format("YYYY-MM-DD")} ${dayjs(
+          this.time1
+        ).format("HH:mm:ss")}`,
+        endTime: `${dayjs(this.date2).format("YYYY-MM-DD")} ${dayjs(
+          this.time2
+        ).format("HH:mm:ss")}`,
       };
       this.setSeat(info);
     },
     async handleClick({ status, id }) {
-      this.time1 ='';
-      this.date1 = '';
-      this.time2 = '';
-      this.date2 = '';
+      this.time1 = "";
+      this.date1 = "";
+      this.time2 = "";
+      this.date2 = "";
       this.id = id;
       this.isShow = true;
       const res = await getSeatReserveList({ seatId: id });
@@ -240,27 +247,53 @@ export default {
       }
     },
     setTimeRange(time) {
-      // console.log(dayjs(time).format('YYYY-MM-DD'));
-      console.log(time);
       const dateObj = this.resDate[time];
-      const aaa = this.calculateAvailablePeriods(time, dateObj);
-      this.pickerTime1.selectableRange = aaa
-      this.date2 = time
+      console.log(dateObj, "dateObj");
+      if (dateObj) {
+        const aaa = this.calculateAvailablePeriods(time, dateObj);
+        this.pickerTime1.selectableRange = aaa;
+      } else {
+        this.pickerTime1.selectableRange = ["10:00:00 - 20:00:00"];
+      }
+
+      this.date2 = time;
     },
-    changeTime1(time){
-      console.log(1231231231);
-      this.pickerTime1.selectableRange.forEach((e,index) =>{
-        console.log(e);
-        const arr = e.split('-');
-        console.log(arr);
-        const formatTime =this.date1+ ' ' + dayjs(time).format('HH:mm:ss');
-        console.log(formatTime);
-        console.log(dayjs(formatTime).isBetween(this.date1+ ' ' + arr[0], this.date1+ ' ' + arr[1], null, '[]'));
-        if (dayjs(formatTime).isBetween(this.date1+ ' ' + arr[0], this.date1+ ' ' + arr[1], null, '[]')) {
-          this.pickerTime2.selectableRange = `${dayjs(time).format('HH:mm:ss')}-${e.substring(e.length - 8)}`
-            console.log(this.pickerTime2.selectableRange, 'this.pickerTime2.selectableRange');
-        }
-      })
+    changeTime1(time) {
+      this.time2 = null
+      console.log(time, "changeTime1");
+      if (time) {
+        this.pickerTime1.selectableRange.forEach((e, index) => {
+          console.log(e);
+          const arr = e.split("-");
+          console.log(arr);
+          const formatTime = this.date1 + " " + dayjs(time).format("HH:mm:ss");
+          console.log(formatTime);
+          console.log(
+            dayjs(formatTime).isBetween(
+              this.date1 + " " + arr[0],
+              this.date1 + " " + arr[1],
+              null,
+              "[]"
+            )
+          );
+          if (
+            dayjs(formatTime).isBetween(
+              this.date1 + " " + arr[0],
+              this.date1 + " " + arr[1],
+              null,
+              "[]"
+            )
+          ) {
+            this.pickerTime2.selectableRange = `${dayjs(time).format(
+              "HH:mm:ss"
+            )}-${e.substring(e.length - 8)}`;
+            console.log(
+              this.pickerTime2.selectableRange,
+              "this.pickerTime2.selectableRange"
+            );
+          }
+        });
+      }
     },
     groupByDate(reservations) {
       return reservations.reduce((acc, reservation) => {
@@ -303,11 +336,11 @@ export default {
 
         availablePeriods = newAvailablePeriods;
       });
-      const newTime = availablePeriods.map(e =>{
-        e.end = dayjs(e.end).format('HH:mm:ss')
-        e.start = dayjs(e.start).format('HH:mm:ss')
-        return `${e.start}-${e.end}`
-      })
+      const newTime = availablePeriods.map((e) => {
+        e.end = dayjs(e.end).format("HH:mm:ss");
+        e.start = dayjs(e.start).format("HH:mm:ss");
+        return `${e.start}-${e.end}`;
+      });
       return newTime;
     },
   },

@@ -2,7 +2,9 @@
   <div class="login-container">
     <div class="form-container">
       <div class="title-container">
-        <h3 class="title">{{ isLogin ? "登录" : "注册" }}</h3>
+        <h3 class="title">
+          {{ showForm == 1 ? "登录" : showForm == 2 ? "注册" : "密码找回" }}
+        </h3>
       </div>
       <el-form
         ref="loginForm"
@@ -11,17 +13,17 @@
         class="login-form"
         auto-complete="on"
         label-position="left"
-        v-if="isLogin"
+        v-if="showForm == 1"
       >
-        <el-form-item prop="username">
+        <el-form-item prop="studentid">
           <span class="svg-container">
             <svg-icon icon-class="user" />
           </span>
           <el-input
-            ref="username"
-            v-model="loginForm.username"
-            placeholder="Username"
-            name="username"
+            ref="studentid"
+            v-model="loginForm.studentid"
+            placeholder="请输入学号"
+            name="studentid"
             type="text"
             tabindex="1"
             auto-complete="on"
@@ -37,7 +39,7 @@
             ref="password"
             v-model="loginForm.password"
             :type="passwordType"
-            placeholder="Password"
+            placeholder="请输入密码"
             name="password"
             tabindex="2"
             auto-complete="on"
@@ -49,7 +51,9 @@
             />
           </span>
         </el-form-item>
-
+        <div style="text-align: end; margin-bottom: 20px">
+          <el-link type="warning" @click="registerUser(3)">忘记密码</el-link>
+        </div>
         <el-button
           :loading="loading"
           type="primary"
@@ -58,7 +62,7 @@
           >登录</el-button
         >
         <div style="float: right">
-          <el-button type="text" @click="registerUser"
+          <el-button type="text" @click="registerUser(2)"
             >没有账号，前往注册</el-button
           >
         </div>
@@ -70,7 +74,7 @@
         class="login-form"
         auto-complete="on"
         label-position="left"
-        v-else
+        v-else-if="showForm == 2"
       >
         <el-form-item prop="username">
           <span class="svg-container">
@@ -160,9 +164,84 @@
           >注册</el-button
         >
         <div style="float: right">
-          <el-button type="text" @click="registerUser"
+          <el-button type="text" @click="registerUser(1)"
             >已有账号，前往登录</el-button
           >
+        </div>
+      </el-form>
+      <el-form
+        ref="forgetPaForm"
+        :model="forgetPaForm"
+        :rules="forgetRules"
+        class="login-form"
+        auto-complete="on"
+        label-position="left"
+        v-else-if="showForm == 3"
+      >
+        <el-form-item prop="studentid">
+          <span class="svg-container">
+            <svg-icon icon-class="user" />
+          </span>
+          <el-input
+            ref="studentid"
+            v-model="forgetPaForm.studentid"
+            placeholder="请输入学号"
+          />
+        </el-form-item>
+        <el-form-item prop="email">
+          <span class="svg-container">
+            <svg-icon icon-class="email" />
+          </span>
+          <el-input
+            ref="email"
+            v-model="forgetPaForm.email"
+            placeholder="请输入邮箱"
+          >
+          </el-input>
+        </el-form-item>
+        <div style="text-align:right;margin-bottom: 10px;">
+          <el-link type="primary" @click="getEmailCode">获取验证码</el-link>
+        </div>
+        <el-form-item prop="code">
+          <span class="svg-container">
+            <svg-icon icon-class="studentId" />
+          </span>
+          <el-input
+            ref="code"
+            v-model="forgetPaForm.code"
+            placeholder="请输入验证码"
+          />
+        </el-form-item>
+        <el-form-item prop="newPassword">
+          <span class="svg-container">
+            <svg-icon icon-class="password" />
+          </span>
+          <el-input
+            :key="passwordType"
+            ref="password"
+            v-model="forgetPaForm.newPassword"
+            :type="passwordType"
+            placeholder="请输入新密码"
+            name="password"
+            tabindex="2"
+            auto-complete="on"
+          />
+          <span class="show-pwd" @click="showPwd">
+            <svg-icon
+              :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"
+            />
+          </span>
+        </el-form-item>
+
+        <el-button
+          :loading="loading"
+          type="primary"
+          style="width: 100%; margin-bottom: 30px"
+          @click="handleChangePassword"
+          >更改密码</el-button
+        >
+        <div style="float: right">
+          <el-button type="text" @click="registerUser(1)">返回登录</el-button>
         </div>
       </el-form>
     </div>
@@ -170,7 +249,7 @@
 </template>
 
 <script>
-import {regUser} from '@/api/user'
+import { regUser, forgetPassword, changePassword } from "@/api/user";
 export default {
   name: "Login",
   data() {
@@ -187,30 +266,53 @@ export default {
     };
     return {
       loginForm: {
-        username: "1204",
-        password: "123456",
+        // username: "1204",
+        // password: "123456",
       },
-      registerForm: {
-      },
+      forgetPaForm: {},
+      registerForm: {},
       loginRules: {
-        username: [
-          { required: true, trigger: "blur", message: "请输入用户名" },
+        studentid: [
+          { required: true, trigger: "blur", message: "请输入学号" },
         ],
         password: [{ required: true, trigger: "blur", message: "请输入密码" }],
       },
       registerRules: {
-        username: [{ required: true, trigger: "blur", message: "请输入用户名" }],
+        username: [
+          { required: true, trigger: "blur", message: "请输入用户名" },
+        ],
         nickname: [{ required: true, trigger: "blur", message: "请输入姓名" }],
         password: [{ required: true, trigger: "blur", message: "请输入密码" }],
         studentid: [{ required: true, trigger: "blur", message: "请输入学号" }],
-        email: [{ required: true, validator: validateQQEmail, trigger: "blur", message: "请检查邮箱格式" }],
+        email: [
+          {
+            required: true,
+            validator: validateQQEmail,
+            trigger: "blur",
+            message: "请检查邮箱格式",
+          },
+        ],
         classn: [{ required: true, trigger: "blur", message: "请输入班级" }],
         major: [{ required: true, trigger: "blur", message: "请输入专业" }],
+      },
+      forgetRules: {
+        newPassword: [{ required: true, trigger: "blur", message: "请输入密码" }],
+        code: [{ required: true, trigger: "blur", message: "请输入验证码" }],
+        studentid: [{ required: true, trigger: "blur", message: "请输入学号" }],
+        email: [
+          {
+            required: true,
+            validator: validateQQEmail,
+            trigger: "blur",
+            message: "请检查邮箱格式",
+          },
+        ],
+         
       },
       loading: false,
       passwordType: "password",
       redirect: undefined,
-      isLogin: true,
+      showForm: true,
     };
   },
   watch: {
@@ -233,7 +335,9 @@ export default {
       });
     },
     handleLogin() {
+      console.log(2222);
       this.$refs.loginForm.validate((valid) => {
+        console.log(valid);
         if (valid) {
           this.loading = true;
           this.$store
@@ -248,7 +352,7 @@ export default {
             });
         } else {
           console.log("error submit!!");
-          this.loading = false
+          this.loading = false;
           return false;
         }
       });
@@ -258,28 +362,78 @@ export default {
         console.log(valid, "校验");
         if (valid) {
           this.loading = true;
-          regUser(this.registerForm).then(res =>{
-           if (res.success) {
-            this.$message.success('注册成功');
-            this.loginForm.username = this.registerForm.username
-            this.loginForm.password = this.registerForm.password;
-            this.loading = false;
-            setTimeout(() => {
-              this.isLogin = true
-            }, 1500);
-           }
-            
-          })
+          regUser(this.registerForm).then((res) => {
+            if (res.success) {
+              this.$message.success("注册成功");
+              this.loginForm.studentid = this.registerForm.studentid;
+              this.loginForm.password = this.registerForm.password;
+              this.loading = false;
+              setTimeout(() => {
+                this.showForm = true;
+              }, 1500);
+            }
+          });
         } else {
           console.log("error submit!!");
-          this.loading = false
+          this.loading = false;
           return false;
         }
       });
     },
-    registerUser() {
-      this.isLogin = !this.isLogin;
+    async handleChangePassword() {
+      this.$refs.forgetPaForm.validate((valid) => {
+        if (valid) {
+          changePassword(this.forgetPaForm).then(res =>{
+            if (res.status == 0) {
+              this.$message.success('密码修改成功！')
+            }else{
+              this.$message.error('修改密码失败，请联系管理员')
+            }
+          })
+        } else {
+          console.log("error submit!!");
+          this.loading = false;
+          return false;
+        }
+      });
     },
+    registerUser(val) {
+      this.showForm = val;
+    },
+    getEmailCode(){
+      const promises = [
+        new Promise((resolve, reject) => {
+          this.$refs.forgetPaForm.validateField('email', (error) => {
+            if (error) reject(error);
+            else resolve();
+          });
+        }),
+        new Promise((resolve, reject) => {
+          this.$refs.forgetPaForm.validateField('studentid', (error) => {
+            if (error) reject(error);
+            else resolve();
+          });
+        })
+        
+      ];
+      Promise.all(promises)
+        .then(() => {
+          const obj = {
+            email: this.forgetPaForm.email,
+            studentid: this.forgetPaForm.studentid
+          }
+          forgetPassword(obj).then(res =>{
+            if (res.status == 0) {
+              this.$message.success(res.message)
+            }else{
+              this.$message.error(res.message)
+            }
+          })
+        })
+        .catch((error) => {
+          console.log('校验不通过', error);
+        });
+    }
   },
 };
 </script>

@@ -30,9 +30,12 @@ const mutations = {
 const actions = {
   // user login
   login({ commit }, userInfo) {
-    const { username, password } = userInfo
+    console.log('12312312312',userInfo);
+    const { username:studentid, password } = userInfo
+
     return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
+      login({ studentid: studentid.trim(), password: password }).then(response => {
+        console.log(response);
         const { token, userid } = response
         commit('SET_TOKEN', token)
         sessionStorage.setItem("userId", userid)
