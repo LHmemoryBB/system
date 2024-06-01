@@ -27,6 +27,9 @@
           <span v-else-if="scope.row.reservation_status == 1"
             ><el-tag type="info">已过期</el-tag></span
           >
+          <span v-else-if="scope.row.reservation_status == 4"
+            ><el-tag type="primary">正在使用</el-tag></span
+          >
         </template>
       </el-table-column>
     </el-table>

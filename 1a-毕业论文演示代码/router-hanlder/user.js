@@ -141,8 +141,8 @@ exports.delUser = (req, res) => {
 // 忘记密码，找回密码 1.发送邮件验证码
 exports.forgotPassword = async (req, res) => {
   const { email, studentid } = req.body;
-  const sql = "SELECT * FROM ev_users WHERE studentid = ?";
-  db.query(sql, studentid, async (error, results) => {
+  const sql = "SELECT * FROM ev_users WHERE studentid = ? AND email = ?;";
+  db.query(sql, [studentid, email], async (error, results) => {
     console.log(results);
     if (error || results.length == 0) {
       console.log(error);

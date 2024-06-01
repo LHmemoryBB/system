@@ -48,7 +48,7 @@ app.use("/zuowei", zuoweiRouter);
 
 //配置前台路由
 app.get("/", function (req, res) {
-  console.log("Received request for root path"); // 添加调试信息
+  // console.log("Received request for root path"); // 添加调试信息
   res.redirect(301, "/public/login/index.html"); // 使用 301 状态码
 });
 
@@ -65,12 +65,14 @@ app.use(function (err, req, res, next) {
 
 // 启动服务器
 
+
+// 提前十分钟邮件通知
 function checkStatus(seatId, status, callback) {
   db.query(
     "SELECT * FROM reservations WHERE end_time BETWEEN NOW() + INTERVAL 10 MINUTE AND NOW() + INTERVAL 20 MINUTE;",
     null,
     (error, results) => {
-      console.log(results);
+      // console.log(results);
       if (results.length > 0) {
         results.forEach((item) => {
           if (item.reservation_status == 3) {
@@ -99,9 +101,11 @@ function checkStatus(seatId, status, callback) {
     }
   );
 }
-setInterval(() => {
-  checkStatus();
-}, 1000 * 60 * 5);
+// setInterval(() => {
+//   checkStatus();
+// }, 1000 * 60 * 5);
+
+
 function updateSeatStatus(seatId, status, callback) {
   db.query(
     "UPDATE seats SET status = ? WHERE id = ?",
@@ -110,6 +114,7 @@ function updateSeatStatus(seatId, status, callback) {
   );
 }
 
+// 定时检查设置座位状态
 function checkReservations(seatId, callback) {
   db.query(
     "SELECT reservation_status FROM reservations WHERE seat_id = ?",
@@ -123,18 +128,17 @@ function checkReservations(seatId, callback) {
       } else if (results.some((res) => res.reservation_status === 3)) {
         status = 1;
       }
-
       callback(null, status);
     }
   );
 }
 setInterval(() => {
+  checkUserReserve()
   db.query("SELECT id FROM seats", (error, seats) => {
     if (error) {
-      console.error("Error fetching seats:", error);
+      // console.error("Error fetching seats:", error);
       return;
     }
-
     let completed = 0;
     seats.forEach((seat) => {
       checkReservations(seat.id, (error, status) => {
@@ -158,49 +162,58 @@ setInterval(() => {
 
           completed++;
           if (completed === seats.length) {
-            console.log("Seat statuses updated successfully.");
+            // console.log("Seat statuses updated successfully.");
           }
         });
       });
     });
   });
-}, 1000 * 60 * 5);
+}, 1000 * 60);
+
+//定时检查座位预约状态到时间自动设置为占座
+function checkUserReserve() {
+   const sql = 'UPDATE reservations SET reservation_status = 4 WHERE start_time < NOW() AND NOW() < end_time;'
+   db.query(sql, (err, res)=>{
+    console.log(res, 'checkUserReserve');
+   })
+}
+
 app.listen(5050, function () {
-  console.log("api listening on port on http://localhost:5050");
+  // console.log("api listening on port on http://localhost:5050");
   // 定时任务，每隔 5 分钟清理过期的预约记录
-  setInterval(() => {
-    const now = new Date();
-    const sql = "select * FROM reservations";
-    db.query(sql, (err, results) => {
-      if (err) return console.log(err.message);
-      if (results.length === 0) return;
-      else {
-        results.forEach((res) => {
-          console.log(res);
-          const reservationEnd = new Date(res.end_time);
-          if (now > reservationEnd) {
-            // 这个预约已经过期了
-            // console.log(`预约已过期：${res.end_time}`);
-            // 在这里加入你的过期记录处理逻辑
-            const sql =
-              "UPDATE reservations SET reservation_status = 1 WHERE id = ?";
-            db.query(sql, res.id, (err, results) => {
-              // console.log(results);
-              if (err) return console.log("修改座位状态失败：" + err.message);
-              if (results.affectedRows === 0)
-                return console.log("修改座位状态失败");
-              else {
-                // console.log("已经将座位状态改为1");
-              }
-            });
-          } else {
-            // 这个预约还未过期
-            // console.log(
-            //   `预约未过期：${res.end_time} seat_id:${res.seat_id}`
-            // );
-          }
-        });
-      }
-    });
-  }, 1000 * 60 * 5);
+  // setInterval(() => {
+  //   const now = new Date();
+  //   const sql = "select * FROM reservations";
+  //   db.query(sql, (err, results) => {
+  //     if (err) return console.log(err.message);
+  //     if (results.length === 0) return;
+  //     else {
+  //       results.forEach((res) => {
+  //         console.log(res);
+  //         const reservationEnd = new Date(res.end_time);
+  //         if (now > reservationEnd) {
+  //           // 这个预约已经过期了
+  //           // console.log(`预约已过期：${res.end_time}`);
+  //           // 在这里加入你的过期记录处理逻辑
+  //           const sql =
+  //             "UPDATE reservations SET reservation_status = 1 WHERE id = ?";
+  //           db.query(sql, res.id, (err, results) => {
+  //             // console.log(results);
+  //             if (err) return console.log("修改座位状态失败：" + err.message);
+  //             if (results.affectedRows === 0)
+  //               return console.log("修改座位状态失败");
+  //             else {
+  //               // console.log("已经将座位状态改为1");
+  //             }
+  //           });
+  //         } else {
+  //           // 这个预约还未过期
+  //           // console.log(
+  //           //   `预约未过期：${res.end_time} seat_id:${res.seat_id}`
+  //           // );
+  //         }
+  //       });
+  //     }
+  //   });
+  // }, 1000 * 60 * 5);
 });
