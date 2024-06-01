@@ -177,7 +177,7 @@ export default {
         },
         series: [
           {
-            name: "Access From",
+            name: "座位使用情况",
             type: "pie",
             radius: ["40%", "70%"],
             avoidLabelOverlap: false,
