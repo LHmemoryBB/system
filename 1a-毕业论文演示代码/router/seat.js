@@ -8,6 +8,7 @@ router.get('/getyuyuejilu', seat_handler.getSeatYuYueJILU)
 
 //获取座位信息
 router.get('/seatinfo', seat_handler.getSeatInfo)
+router.get('/seatList', seat_handler.getSeatList)
 //更新座位信息
 router.post('/updateseat', seat_handler.updateSeatInfo)
 

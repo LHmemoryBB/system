@@ -62,7 +62,7 @@ export function getInfo() {
 // 获取座位号
 export function getSeat(param) {
   return request({
-    url: '/seat/seatinfo?floor='+ param.floor,
+    url: '/seat/seatList?floor='+ param.floor,
     method: 'get'
   })
 }

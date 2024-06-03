@@ -79,6 +79,18 @@ exports.getSeatInfo = function (req, res) {
     // res.send({ status: 0, message: "获取座位信息成功！", data: results });
   });
 };
+//获取座位信息
+exports.getSeatList = function (req, res) {
+  console.log(222);
+  let floor = req.query.floor;
+  const sql = "SELECT * FROM seats WHERE floor = ? ";
+  db.query(sql, floor, (err, results) => {
+    if (err) {
+      return res.cc(err);
+    }
+    res.send({ status: 0, message: "获取座位信息成功！", data: results });
+  });
+};
 //更新座位信息(座位状态)
 exports.updateSeatInfo = function (req, res) {
   const sql = "UPDATE seats SET status=? WHERE id=?";
