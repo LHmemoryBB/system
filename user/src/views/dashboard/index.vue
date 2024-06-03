@@ -9,6 +9,7 @@
             placeholder="选择日期"
             value-format="yyyy-MM-dd"
             :picker-options="pickerOptionsSearch"
+            :clearable="false"
           >
           </el-date-picker>
         </el-form-item>
@@ -198,18 +199,19 @@ export default {
         },
       },
       pickerOptionsSearch: {
-        disabledDate: (time) => {
-          return time.getTime() < new Date().getTime();
-        },
+        // disabledDate: (time) => {
+        //   return time.getTime() < new Date().getTime();
+        // },
       },
       pickerTime1: {
-        selectableRange: ["10:00:00 - 20:00:00"],
+        selectableRange: [],
       },
       pickerTime2: {
-        selectableRange: ["10:00:00 - 20:00:00"],
+        selectableRange: [],
       },
       resDate: {},
-      reservedTimeList: [],
+      reservedTimeList: [],  //被预约的时间
+      openLibraryTime:['07:00:00 - 22:00:00']
     };
   },
   created() {
@@ -280,7 +282,7 @@ export default {
         const aaa = this.calculateAvailablePeriods(time, dateObj);
         this.pickerTime1.selectableRange = aaa;
       } else {
-        this.pickerTime1.selectableRange = ["10:00:00 - 20:00:00"];
+        this.pickerTime1.selectableRange = this.openLibraryTime;
       }
 
       this.date2 = time;
@@ -335,8 +337,8 @@ export default {
       }, {});
     },
     calculateAvailablePeriods(date, reservations) {
-      const openTime = "10:00:00";
-      const closeTime = "21:00:00";
+      const openTime = "07:00:00";
+      const closeTime = "22:00:00";
       const dayStart = dayjs(`${date} ${openTime}`);
       const dayEnd = dayjs(`${date} ${closeTime}`);
 
