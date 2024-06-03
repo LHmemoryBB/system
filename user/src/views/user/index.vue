@@ -62,7 +62,6 @@
           <el-table
             :data="reverseTableData"
             style="width: 60%"
-            :row-class-name="tableRowClassName"
             height="400px"
             border
           >

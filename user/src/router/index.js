@@ -75,7 +75,7 @@ export const constantRoutes = [
       {
         path: 'index',
         name: 'Form',
-        component: () => import('@/views/table/index'),
+        component: () => import('@/views/user/index'),
         meta: { title: '个人信息', icon: 'table' }
       }
     ]

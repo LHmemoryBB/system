@@ -25,6 +25,8 @@ const sendEmail = (option) => {
     from: "1925792024@qq.com", // 发件人地址
     ...option,
   };
+
+  // 使用promise处理异步操作，等待邮件发送完成之后，返回发送结果
   return new Promise((resolve, reject) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {

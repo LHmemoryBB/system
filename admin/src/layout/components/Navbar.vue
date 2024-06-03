@@ -7,6 +7,7 @@
     <div class="right-menu">
       <el-dropdown class="avatar-container" trigger="click">
         <div class="avatar-wrapper">
+          <!-- 用户头像 -->
           <img :src="imgUrl" class="user-avatar">
           <i class="el-icon-caret-bottom" />
         </div>

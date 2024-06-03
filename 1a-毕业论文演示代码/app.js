@@ -65,7 +65,6 @@ app.use(function (err, req, res, next) {
 
 // 启动服务器
 
-
 // 提前十分钟邮件通知
 function checkStatus(seatId, status, callback) {
   db.query(
@@ -101,10 +100,9 @@ function checkStatus(seatId, status, callback) {
     }
   );
 }
-// setInterval(() => {
-//   checkStatus();
-// }, 1000 * 60 * 5);
-
+setInterval(() => {
+  checkStatus();
+}, 1000 * 60 * 5);
 
 function updateSeatStatus(seatId, status, callback) {
   db.query(
@@ -123,6 +121,7 @@ function checkReservations(seatId, callback) {
       if (error) return callback(error);
 
       let status = 0;
+      // some方法--至少有一条数据满足条件
       if (results.some((res) => res.reservation_status === 4)) {
         status = 2;
       } else if (results.some((res) => res.reservation_status === 3)) {
@@ -132,88 +131,62 @@ function checkReservations(seatId, callback) {
     }
   );
 }
+
+//设置预约状态和座位状态
 setInterval(() => {
-  checkUserReserve()
-  db.query("SELECT id FROM seats", (error, seats) => {
-    if (error) {
-      // console.error("Error fetching seats:", error);
-      return;
-    }
-    let completed = 0;
-    seats.forEach((seat) => {
-      checkReservations(seat.id, (error, status) => {
+  checkUserReserve();
+}, 1000 * 5 * 60);
+
+//定时检查座位预约状态到时间自动设置为占座
+function checkUserReserve() {
+  try {
+    const sql =
+    "UPDATE reservations SET reservation_status = 4 WHERE start_time < NOW() AND NOW() < end_time AND reservation_status = 3;";
+  db.query(sql, (err, res) => {
+    const sql2 =
+      "UPDATE reservations SET reservation_status = 1 WHERE end_time < NOW() AND reservation_status = 4;";
+    db.query(sql2, (err, res) => {
+      console.log(err, res);
+      db.query("SELECT id FROM seats", (error, seats) => {
+        console.log(2222);
         if (error) {
-          console.error(
-            "Error checking reservations for seat:",
-            seat.id,
-            error
-          );
+          console.error("Error fetching seats:", error);
           return;
         }
-
-        updateSeatStatus(seat.id, status, (error) => {
-          if (error) {
-            console.error(
-              "Error updating seat status for seat:",
-              seat.id,
-              error
-            );
-          }
-
-          completed++;
-          if (completed === seats.length) {
-            // console.log("Seat statuses updated successfully.");
-          }
+        let completed = 0;
+        seats.forEach((seat) => {
+          checkReservations(seat.id, (error, status) => {
+            if (error) {
+              console.error(
+                "Error checking reservations for seat:",
+                seat.id,
+                error
+              );
+              return;
+            }
+            updateSeatStatus(seat.id, status, (error) => {
+              if (error) {
+                console.error(
+                  "Error updating seat status for seat:",
+                  seat.id,
+                  error
+                );
+              }
+              completed++;
+              if (completed === seats.length) {
+                // console.log("Seat statuses updated successfully.");
+              }
+            });
+          });
         });
       });
     });
   });
-}, 1000 * 60);
-
-//定时检查座位预约状态到时间自动设置为占座
-function checkUserReserve() {
-   const sql = 'UPDATE reservations SET reservation_status = 4 WHERE start_time < NOW() AND NOW() < end_time;'
-   db.query(sql, (err, res)=>{
-    console.log(res, 'checkUserReserve');
-   })
+  } catch (error) {
+    console.log(error, '执行过程中遇到错误');
+  }
 }
 
 app.listen(5050, function () {
-  // console.log("api listening on port on http://localhost:5050");
-  // 定时任务，每隔 5 分钟清理过期的预约记录
-  // setInterval(() => {
-  //   const now = new Date();
-  //   const sql = "select * FROM reservations";
-  //   db.query(sql, (err, results) => {
-  //     if (err) return console.log(err.message);
-  //     if (results.length === 0) return;
-  //     else {
-  //       results.forEach((res) => {
-  //         console.log(res);
-  //         const reservationEnd = new Date(res.end_time);
-  //         if (now > reservationEnd) {
-  //           // 这个预约已经过期了
-  //           // console.log(`预约已过期：${res.end_time}`);
-  //           // 在这里加入你的过期记录处理逻辑
-  //           const sql =
-  //             "UPDATE reservations SET reservation_status = 1 WHERE id = ?";
-  //           db.query(sql, res.id, (err, results) => {
-  //             // console.log(results);
-  //             if (err) return console.log("修改座位状态失败：" + err.message);
-  //             if (results.affectedRows === 0)
-  //               return console.log("修改座位状态失败");
-  //             else {
-  //               // console.log("已经将座位状态改为1");
-  //             }
-  //           });
-  //         } else {
-  //           // 这个预约还未过期
-  //           // console.log(
-  //           //   `预约未过期：${res.end_time} seat_id:${res.seat_id}`
-  //           // );
-  //         }
-  //       });
-  //     }
-  //   });
-  // }, 1000 * 60 * 5);
+  console.log("api listening on port on http://localhost:5050");
 });

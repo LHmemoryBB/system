@@ -126,15 +126,22 @@ exports.getUserAll = (req, res) => {
 
 //根据id删除用户
 exports.delUser = (req, res) => {
-  const sql = "DELETE FROM ev_users WHERE id = ?";
-
-  db.query(sql, req.query.id, (err, results) => {
-    if (err) return res.cc(err);
-    res.send({
-      status: 0,
-      message: "删除成功",
-      data: results,
-    });
+  const sql = "DELETE FROM reservations WHERE user_id = ?";
+  db.query(sql, req.query.id, (err, res1) => {
+    console.log(err, res1, "删除");
+    if (err) {
+      return res.cc(err)
+    } else {
+      const sql = "DELETE FROM ev_users WHERE id = ?";
+      db.query(sql, req.query.id, (err, results) => {
+        if (err) return res.cc(err);
+        res.send({
+          status: 0,
+          message: "删除成功",
+          data: results,
+        });
+      });
+    }
   });
 };
 
@@ -148,7 +155,7 @@ exports.forgotPassword = async (req, res) => {
       console.log(error);
       res.send({
         status: 1,
-        message: "系统不存在此学号，请前往注册",
+        message: "系统不存在此学号或邮箱，请核对信息",
       });
     } else if (results.length > 0) {
       const generatedCode = generateVerificationCode(); // 生成验证码
@@ -166,23 +173,19 @@ exports.forgotPassword = async (req, res) => {
               <p>如果您没有请求重置密码，请忽略此邮件。</p>
               <p>祝您使用愉快！</p>`,
       };
-      sendEmail(mailOptions).then(()=>{
-        res.send({
-          status: 0,
-          message: "邮件发送成功，请前往邮箱查收",
+      sendEmail(mailOptions)
+        .then(() => {
+          res.send({
+            status: 0,
+            message: "邮件发送成功，请前往邮箱查收",
+          });
+        })
+        .catch(() => {
+          res.send({
+            status: 1,
+            message: "发送邮件失败，请检查邮箱或联系管理员",
+          });
         });
-      }).catch(()=>{
-        res.send({
-          status: 1,
-          message: "发送邮件失败，请检查邮箱或联系管理员",
-        });
-      })
-      // console.log(mailRes);
-      // if (mailRes.success) {
-        
-      // } else {
-        
-      // }
     }
   });
 };

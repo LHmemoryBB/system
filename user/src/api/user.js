@@ -28,7 +28,7 @@ export function getInfo() {
 // 获取座位号
 export function getSeat(param) {
   return request({
-    url: '/seat/seatinfo?floor='+ param.floor,
+    url: '/seat/seatinfo?floor='+ param.floor + '&time='+ param.time,
     method: 'get'
   })
 }
